@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.hardware.SensorEventListener;
 import android.os.Bundle;
+import java.lang.Math;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -73,13 +74,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 SensorManager.SENSOR_DELAY_GAME);
     }
 
+    private float normalizePoint(float event_value, double point)
+    {
+        return event_value > point + 180 ? event_value - 360 : event_value;
+    }
+
+
     @Override
     public void onSensorChanged(SensorEvent event) {
 
+        double my_x = 0, my_y = 90;
+
+        double theta = 0.0174533 * event.values[2];
+        double roatated_x = (my_x * Math.cos(theta)) - (my_y * Math.sin(theta));
+        double roatated_y = (my_x * Math.sin(theta)) + (my_y * Math.cos(theta));
+
+
+        float normalized_event_x = normalizePoint(event.values[0], roatated_x);
+        float normalized_event_y = normalizePoint(event.values[1], roatated_y);
+
         // get angle around the z-axis rotated
         float degree = Math.round(event.values[0]);
-        float y = 0;//- 15 * (50 + event.values[1]);
-        float x = (float) (15 * (180 - event.values[0]));
+        float y = (float) (-15 * (roatated_y + normalized_event_y));
+        float x = (float) (15 *  (roatated_x - normalized_event_x));
 
         // Setting text
         DegreeTV.setText("0: " + Float.toString(degree) + " degrees\n" +
@@ -102,10 +119,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // Start animation of compass image
         compassimage.startAnimation(ra);
-
-
-
-
 
         // Translation animation
         TranslateAnimation ta = new TranslateAnimation(xStart, x, yStart, y);
